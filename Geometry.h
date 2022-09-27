@@ -175,6 +175,13 @@ inline bool operator==(const Vector<int, N>& a, const Vector<int, N>& b)
 }
 
 template <size_t N>
+inline bool operator==(const Vector<uint8_t, N>& a, const Vector<uint8_t, N>& b)
+{
+	for (size_t i = 0; i < N; i++) if (a[i] != b[i]) return false;
+	return true;
+}
+
+template <size_t N>
 inline bool operator!=(const Vector<int, N>& a, const Vector<int, N>& b)
 {
 	for (size_t i = 0; i < N; i++) if (a[i] == b[i]) return false;

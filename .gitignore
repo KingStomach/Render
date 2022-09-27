@@ -1,1 +1,6 @@
 .vs/
+x64
+Render.sln
+Render.vcxproj.filters
+Render.vcxproj.user
+out.bmp
