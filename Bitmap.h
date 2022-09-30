@@ -1,8 +1,11 @@
 //=====================================================================
 //
-// TGAImage.h - 该文件参考了 RenderHelp 的 RenderHelp.h
+// BitMap.h - 该文件参考了 RenderHelp 的 RenderHelp.h
 //
 //=====================================================================
+
+#ifndef _BITMAP_H_
+#define _BITMAP_H_
 
 #include <cstdint>
 #include <vector>
@@ -26,7 +29,7 @@ struct Color
 
 const Color Red(255, 0, 0);
 const Color Blue(0, 0, 255);
-
+const Color White(255, 255, 255);
 
 enum Format { GRAYSCALE = 1, RGB = 3, RGBA = 4 };
 
@@ -34,7 +37,7 @@ enum Format { GRAYSCALE = 1, RGB = 3, RGBA = 4 };
 class Bitmap
 {
 public:
-    Bitmap(const int width, const int height) : w(width), h(height) { data.resize(width * height); }
+    Bitmap(const int width = 0, const int height = 0) : w(width), h(height) { data.resize(width * height); }
     Bitmap(const std::string& filename) { this->LoadFile(filename); }
 
 
@@ -44,17 +47,18 @@ public:
     inline void Fill(const Color& color) { for (auto&& i : data) i = color; }
     void FlipVertical();
     void FlipHorizontal();
-    void LoadFile(const std::string& filename);
+    bool LoadFile(const std::string& filename);
     bool SaveFile(const std::string& filename, Format format = RGB) const;
     inline void SetPixel(int x, int y, const Color& color) { data[getIndex(x, y)] = color; }
     inline void SetPixel(const Vec2i& xy, const Color& color) { data[getIndex(xy.x, xy.y)] = color; }
-    inline Color GetPixel(int x, int y) const { return data[getIndex(x, y)]; }
-    inline Color GetPixel(const Vec2i& xy) const { return data[getIndex(xy.x, xy.y)]; }
+    inline const Color& GetPixel(int x, int y) const { return data[getIndex(x, y)]; }
+    inline const Color& GetPixel(const Vec2i& xy) const { return data[getIndex(xy.x, xy.y)]; }
 
-    inline Color Sample2D(int u, int v) const { return GetPixel(u * w, v * h); }
-    inline Color Sample2D(const Vec2i& uv) const { return GetPixel(uv.u * w, uv.v * h); }
-    inline Color Sample2D(float u, float v);
-    inline Color Sample2D(const Vec2f& uv);
+    inline const Color& Sample2D(int u, int v) const { return GetPixel(u * w, v * h); }
+    inline const Color& Sample2D(const Vec2i& uv) const { return GetPixel(uv.u * w, uv.v * h); }
+    inline const Color& Sample2D(float u, float v) const { return data[0]; }
+    inline const Color& Sample2D(const Vec2f& uv) const { return data[0]; }
+    inline const Color& Sample2D(const Vec2d& uv) const { return data[0]; }
 
 private:
     int w;
@@ -75,6 +79,6 @@ private:
         uint32_t	biClrImportant;
     };
 
-    inline int getIndex(int x, int y) const { return x * w + y; }
-    bool unload_rle_data(std::ofstream& out, Format format) const;
+    inline int getIndex(int x, int y) const { return x * h + y; }
 };
+#endif

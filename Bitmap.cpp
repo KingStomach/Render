@@ -13,8 +13,53 @@ void Bitmap::FlipHorizontal()
 
 }
 
-void Bitmap::LoadFile(const std::string& filename)
+bool Bitmap::LoadFile(const std::string& filename)
 {
+    std::ifstream in;
+    in.open(filename, std::ios::binary);
+    if (!in.is_open()) {
+        std::cerr << "can't open file " << filename << "\n";
+        in.close();
+        return false;
+    }
+    BITMAPINFOHEADER info;
+    uint8_t header[14];
+    in.read(reinterpret_cast<char*>(&header), sizeof(header));
+    if (!in.good() || header[0] != 0x42 || header[1] != 0x4d)
+    {
+        in.close();
+        std::cerr << "an error occured while reading the header\n";
+        return false;
+    }
+
+    in.read(reinterpret_cast<char*>(&info), sizeof(info));
+    if (!in.good() || info.biBitCount != 24 && info.biBitCount != 32)
+    {
+        in.close();
+        std::cerr << "an error occured while reading the info\n";
+        return false;
+    }
+    this->w = info.biWidth;
+    this->h = info.biHeight;
+    this->data.resize(this->w * this->h);
+    uint32_t offset;
+    memcpy(&offset, header + 10, sizeof(uint32_t));
+    in.seekg(offset, std::ios_base::beg);
+    uint32_t pixelsize = (info.biBitCount + 7) / 8;
+    uint32_t pitch = (pixelsize * info.biWidth + 3) & (~3);
+    for (int y = 0; y < (int)info.biHeight; y++) {
+        for (int x = 0; x < (int)info.biWidth; x++) {
+            in.read(reinterpret_cast<char*>(&data[getIndex(x, y)]), sizeof(Color));
+            if (!in.is_open())
+            {
+                std::cerr << "can't read pixel " << std::to_string(x) << " " << std::to_string(y) << "\n";
+                in.close();
+                return false;
+            }
+        }
+        in.seekg(pitch - info.biWidth * pixelsize, std::ios_base::beg);
+    }
+    return true;
 
 }
 

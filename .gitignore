@@ -1,5 +1,6 @@
 .vs/
-x64
+x64/
+res/
 Render.sln
 Render.vcxproj.filters
 Render.vcxproj.user
