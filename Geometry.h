@@ -8,6 +8,8 @@
 #define _GEOMETRY_H_
 
 #include <assert.h>
+#include <array>
+#include <cmath>
 #include <initializer_list>
 
 template<typename T, size_t N> struct Vector
@@ -35,7 +37,7 @@ template <typename T> struct Vector<T, 2>
 	inline T& operator[] (size_t i) { assert(i < 2); return data[i]; }
 	inline T dot(const Vector<T, 2> &a) { return x * a.x + y * a.y; }
 	inline T length() { return std::sqrt(this->dot(*this)); }
-	inline const Vector<T, 2>& normalize() { (*this) /= this->length; return *this; }
+	inline Vector<T, 2>& normalize() { (*this) /= this->length; return *this; }
 };
 
 template <typename T> struct Vector<T, 3> {
@@ -53,7 +55,8 @@ template <typename T> struct Vector<T, 3> {
 	inline T& operator[] (size_t i) { assert(i < 3); return data[i]; }
 	inline T dot(const Vector<T, 3> &a) { return x * a.x + y * a.y + z * a.z; }
 	inline T length() { return std::sqrt(this->dot(*this)); }
-	inline const Vector<T, 3>& normalize() { (*this) /= this->length; return *this; }
+	inline Vector<T, 3>& normalize() { (*this) /= this->length(); return *this; }
+	inline Vector<T, 3> cross(const Vector<T, 3>& a) const{ return Vector<T, 3>(y * a.z - z * a.y, z * a.x - x * a.z, x * a.y - y * a.x); }
 };
 
 template <typename T> struct Vector<T, 4> {
@@ -71,7 +74,7 @@ template <typename T> struct Vector<T, 4> {
 	inline T& operator[] (size_t i) { assert(i < 4); return data[i]; }
 	inline T dot(const Vector<T, 3> &a) { return x * a.x + y * a.y + z * a.z + w * a.w; }
 	inline T length() { return std::sqrt(this->dot(*this)); }
-	inline const Vector<T, 4>& normalize() { (*this) /= this->length; return *this; }
+	inline Vector<T, 4>& normalize() { (*this) /= this->length; return *this; }
 };
 
 template <typename T, size_t N>
@@ -106,10 +109,10 @@ inline Vector<T, N> operator*(const T& x, const Vector<T, N>& a)
 	return c;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N> operator*(const Vector<T, N>& a, const T& x)
+template <typename T1, typename T2, size_t N>
+inline Vector<T1, N> operator*(const Vector<T1, N>& a, const T2& x)
 {
-	Vector<T, N> c;
+	Vector<T1, N> c;
 	for (size_t i = 0; i < N; i++) c[i] = a[i] * x;
 	return c;
 }
@@ -130,8 +133,8 @@ inline Vector<T, N> operator/(const Vector<T, N>& a, const T& x)
 	return c;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N>& operator/=(Vector<T, N>& a, const T &x)
+template <typename T1, typename T2, size_t N>
+inline Vector<T1, N>& operator/=(Vector<T1, N>& a, T2 x)
 {
 	for (size_t i = 0; i < N; i++) a[i] /= x;
 	return a;
@@ -151,6 +154,28 @@ inline bool operator!=(const Vector<T, N>& a, const Vector<T, N>& b)
 	return true;
 }
 
+template <typename T>
+bool isIntersect(const std::array<Vector<T, 3>, 3>& Triangle, const Vector<T, 3>& point)
+{
+	std::array<Vector<T, 3>, 3> TriangleEdge;
+	TriangleEdge[0] = Triangle[1] - Triangle[0];
+	TriangleEdge[1] = Triangle[2] - Triangle[1];
+	TriangleEdge[2] = Triangle[0] - Triangle[2];
+
+	std::array<Vector<T, 3>, 3> result;
+	for (size_t i = 0; i < 3; i++)
+	{
+		result[i] = TriangleEdge[i].cross(point - Triangle[i]);
+	}
+	return (result[0].z > 0.0 && result[1].z > 0.0 && result[2].z > 0.0) ||
+		(result[0].z < 0.0 && result[1].z < 0.0 && result[2].z < 0.0);
+}
+
+template <typename T>
+inline Vector<T, 3> getTriangleNormal(const std::array<Vector<T, 3>, 3>& Triangle)
+{
+	return (Triangle[1] - Triangle[0]).cross(Triangle[2] - Triangle[0]).normalize();
+}
 
 typedef Vector<int, 2> Vec2i;
 typedef Vector<float, 2> Vec2f;

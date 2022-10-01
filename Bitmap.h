@@ -22,9 +22,11 @@ struct Color
 
     Color() : bgra{ 0,0,0,255 } {}
     Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 255) : bgra{ b,g,r,a } {}
+    Color(const Vector<std::uint8_t, 4>& v) : bgra{ v.x,v.y,v.z,v.w } {}
     Color(const Color& c) : bgra(c.bgra) {}
 
-    bool operator==(const Color& c) const { return this->bgra == c.bgra;  }
+    inline bool operator==(const Color& c) const { return this->bgra == c.bgra;  }
+    inline Color operator*(double x) const { return Color(this->bgra * x); }
 };
 
 const Color Red(255, 0, 0);
@@ -41,7 +43,7 @@ public:
     Bitmap(const std::string& filename) { this->LoadFile(filename); }
 
 
-    inline int weight() const { return w; }
+    inline int width() const { return w; }
     inline int height() const { return h; }
 
     inline void Fill(const Color& color) { for (auto&& i : data) i = color; }

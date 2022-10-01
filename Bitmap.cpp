@@ -76,12 +76,12 @@ bool Bitmap::SaveFile(const std::string& filename, Format format) const
 
     BITMAPINFOHEADER info;
     uint32_t pixelsize = format;
-    uint32_t pitch = (weight() * pixelsize + 3) & (~3);
+    uint32_t pitch = (width() * pixelsize + 3) & (~3);
     info.biSizeImage = pitch * height();
     uint32_t bfSize = 54 + info.biSizeImage;
     uint32_t zero = 0, offset = 54;
     info.biSize = 40;
-    info.biWidth = weight();
+    info.biWidth = width();
     info.biHeight = height();
     info.biPlanes = 1;
     info.biBitCount = pixelsize * 8;
@@ -106,8 +106,8 @@ bool Bitmap::SaveFile(const std::string& filename, Format format) const
 
     for (int y = 0; y < height(); y++)
     {
-        uint32_t padding = pitch - weight() * pixelsize;
-        for (int x = 0; x < weight(); x++)
+        uint32_t padding = pitch - width() * pixelsize;
+        for (int x = 0; x < width(); x++)
         {
             out.write(reinterpret_cast<const char*>(&data[getIndex(x, y)]), pixelsize);
             if (!out.is_open())
