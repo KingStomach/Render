@@ -3,6 +3,65 @@
 
 #include "Bitmap.h"
 
+Color::Color() : bgra{ 0,0,0,255 } {}
+
+Color::Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : bgra{ b,g,r,a } {}
+
+Color::Color(const Vector<std::uint8_t, 4>& v) :bgra(v) {}
+
+Color::Color(const Color& c) : bgra(c.bgra) {}
+
+
+bool Color::operator==(const Color& c) const
+{
+    return this->bgra == c.bgra;
+}
+
+bool Color::operator!=(const Color& c) const
+{
+    return this->bgra != c.bgra;
+}
+
+Color Color::operator+(const Color& c) const
+{
+    return Color(c.bgra + this->bgra);
+}
+
+Color Color::operator*(double x) const
+{
+    return Color(x * this->r, x * this->g, x * this->b, a);
+}
+
+Color operator*(double x, const Color& c)
+{
+    return Color(x * c.r, x * c.g, x * c.b, c.a);
+}
+
+Bitmap::Bitmap(const int width, const int height) : w(width), h(height)
+{
+    data.resize(width * height);
+}
+
+Bitmap::Bitmap(const std::string& filename)
+{
+    this->LoadFile(filename);
+}
+
+int Bitmap::width() const
+{
+    return w;
+}
+int Bitmap::height() const
+{
+    return h;
+}
+
+void Bitmap::Fill(const Color& color)
+{
+    for (auto&& pixel : data)
+        pixel = color;
+}
+
 void Bitmap::FlipVertical()
 {
 
@@ -60,7 +119,6 @@ bool Bitmap::LoadFile(const std::string& filename)
         in.seekg(pitch - info.biWidth * pixelsize, std::ios_base::beg);
     }
     return true;
-
 }
 
 bool Bitmap::SaveFile(const std::string& filename, Format format) const
@@ -122,5 +180,25 @@ bool Bitmap::SaveFile(const std::string& filename, Format format) const
 
     out.close();
     return true;
+}
 
+void Bitmap::SetPixel(int x, int y, const Color& color)
+{
+    data[getIndex(x, y)] = color;
+}
+
+
+const Color& Bitmap::GetPixel(int x, int y) const
+{
+    return data[getIndex(x, y)];
+}
+
+const Color& Bitmap::Sample2D(double u, double v) const
+{
+    return data[getIndex((int)u * w, (int)v * h)];
+}
+
+int Bitmap::getIndex(int x, int y) const
+{
+    return x * h + y;
 }

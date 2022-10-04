@@ -3,6 +3,8 @@
 
 #include <array>
 #include <vector>
+
+#include "Shader.h"
 #include "Model.h"
 
 struct Light
@@ -10,8 +12,8 @@ struct Light
 	Vec3d position;
 	Vec3d direction;
 
-	Light() {}
-	Light(const Vec3d& position, const Vec3d& direction) : position(position), direction(direction) {}
+	Light();
+	Light(const Vec3d& position, const Vec3d& direction);
 };
 
 enum class DrawType { Point, WireFrame, Triangle };
@@ -19,32 +21,27 @@ enum class DrawType { Point, WireFrame, Triangle };
 class Scene
 {
 public:
-	Scene(int width, int height, const std::string& filename): w(width), h(height), model(filename), drawtype(DrawType::Triangle) {}
+	Scene(int width, int height, const Model& model);
 
-	inline void setLight(const Light& light) { this->light = light; }
-	inline void setDrawType(DrawType drawtype) { this->drawtype = drawtype; }
-	inline void setWidth(int width) { this->w = width; }
-	inline void setHeight(int height) { this->h = height; }
-	Bitmap render();
+	void setDrawType(DrawType drawtype);
+	void setWidth(int width);
+	void setHeight(int height);
+	Bitmap render(Shader& shader);
 
 private:
 	Model model;
-	Light light;
 	int w;
 	int h;
 	DrawType drawtype;
+	std::vector<double> zbuffer;
 
+	Bitmap renderPoint(Shader& shader);
+	Bitmap renderWireFrame(Shader& shader);
+	Bitmap renderTriangle(Shader& shader);
 	void drawLine(Bitmap& map, const Vec3d &p1, const Vec3d& p2, const Color& color);
-	inline Vec3d worldtoscreen(const Vec3d& p) { return Vec3d((p.x + 1.0) / 2.0 * w, (p.y + 1.0) / 2.0 * h, p.z); }
-	void drawTriangle(Bitmap& map, const std::array<Vec3d, 3>& Triangle, const Color& color);
-	inline void drawTrianglePoint(Bitmap& map, const std::array<Vec3d, 3>& Triangle, const Color& color)
-	{ for (auto&& point : Triangle) map.SetPixel((int)point.x, (int)point.y, color); }
-	inline void drawTriangleWireFrame(Bitmap& map, const std::array<Vec3d, 3>& Triangle, const Color& color)
-	{
-		drawLine(map, Triangle[0], Triangle[1], color);
-		drawLine(map, Triangle[0], Triangle[2], color);
-		drawLine(map, Triangle[1], Triangle[2], color);
-	}
-	void drawTriangleTriangle(Bitmap& map, const std::array<Vec3d, 3>& Triangle, const Color& color);
+	void drawTriangle(Bitmap& map, const std::array<Vec3d, 3>& TriangleWorld, const std::array<Vec3d, 3>& TriangleScreen,
+		const std::array<Color, 3>& color);
+
+	inline int getIndex(int x, int y) const { return x * h + y; }
 };
 #endif

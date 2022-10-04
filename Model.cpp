@@ -29,7 +29,7 @@ Model::Model(const std::string filename)
             iss >> trash >> trash;
             Vec3d n;
             for (int i = 0; i < 3; i++) iss >> n[i];
-            //norms.emplace_back(n.normalize());
+            norms.emplace_back(n.normalize());
         }
         else if (!line.compare(0, 3, "vt ")) {
             iss >> trash >> trash;
@@ -61,20 +61,56 @@ Model::Model(const std::string filename)
     load_texture(filename, "_spec.bmp", specularmap);
 }
 
-int Model::nverts() const {
+int Model::nverts() const
+{
     return verts.size();
 }
 
-int Model::nfaces() const {
+int Model::nfaces() const
+{
     return facet_vrt.size() / 3;
 }
 
-Vec3d Model::vert(const int i) const {
+Vec3d Model::normal(const Vec2d& uvf) const
+{
+    const Color& c = normalmap.Sample2D(uvf);
+    return Vec3d((double)c.r, (double)c.g, (double)c.b) * 2.0 / 255.0 - Vec3d(1, 1, 1);
+}
+
+Vec3d Model::normal(const int iface, const int nthvert) const
+{
+    return norms[facet_nrm[iface * 3 + nthvert]];
+}
+
+Vec3d Model::normal(const int iface) const
+{
+    Vec3d a = norms[facet_nrm[iface * 3]], b = norms[facet_nrm[iface * 3 + 1]], c = norms[facet_nrm[iface * 3 + 2]];
+    return (b - a)^(c - a).normalize();
+}
+
+Vec3d Model::vert(const int i) const
+{
     return verts[i];
 }
 
-Vec3d Model::vert(const int iface, const int nthvert) const {
+Vec3d Model::vert(const int iface, const int nthvert) const
+{
     return verts[facet_vrt[iface * 3 + nthvert]];
+}
+
+Vec2d Model::uv(const int iface, const int nthvert) const
+{
+    return tex_coord[facet_tex[iface * 3 + nthvert]];
+}
+
+const Bitmap& Model::diffuse() const
+{
+    return diffusemap;
+}
+
+const Bitmap& Model::specular() const
+{
+    return specularmap;
 }
 
 void Model::load_texture(std::string filename, const std::string suffix, Bitmap& img) {
@@ -82,17 +118,4 @@ void Model::load_texture(std::string filename, const std::string suffix, Bitmap&
     if (dot == std::string::npos) return;
     std::string texfile = filename.substr(0, dot) + suffix;
     std::cerr << "texture file " << texfile << " loading " << (img.LoadFile(texfile.c_str()) ? "ok" : "failed") << std::endl;
-}
-
-Vec3d Model::normal(const Vec2d& uvf) const {
-    const Color &c = normalmap.Sample2D(uvf);
-    return Vec3d((double)c.r, (double)c.g, (double)c.b) * 2.0 / 255.0 - Vec3d(1, 1, 1);
-}
-
-Vec2d Model::uv(const int iface, const int nthvert) const {
-    return tex_coord[facet_tex[iface * 3 + nthvert]];
-}
-
-Vec3d Model::normal(const int iface, const int nthvert) const {
-    return norms[facet_nrm[iface * 3 + nthvert]];
 }

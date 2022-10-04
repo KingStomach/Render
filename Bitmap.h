@@ -1,16 +1,10 @@
-//=====================================================================
-//
-// BitMap.h - 该文件参考了 RenderHelp 的 RenderHelp.h
-//
-//=====================================================================
-
 #ifndef _BITMAP_H_
 #define _BITMAP_H_
 
 #include <cstdint>
 #include <vector>
 #include <string>
-#include "Geometry.h"
+#include "Vector.h"
 
 struct Color
 {
@@ -20,47 +14,48 @@ struct Color
         struct { std::uint8_t r, g, b, a; };
     };
 
-    Color() : bgra{ 0,0,0,255 } {}
-    Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 255) : bgra{ b,g,r,a } {}
-    Color(const Vector<std::uint8_t, 4>& v) : bgra{ v.x,v.y,v.z,v.w } {}
-    Color(const Color& c) : bgra(c.bgra) {}
-
-    inline bool operator==(const Color& c) const { return this->bgra == c.bgra;  }
-    inline Color operator*(double x) const { return Color(this->bgra * x); }
+    Color();
+    Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a = 255);
+    Color(const Vector<std::uint8_t, 4>& v);
+    Color(const Color& c);
+    
+    bool operator==(const Color& c) const;
+    bool operator!=(const Color& c) const;
+    Color operator+(const Color& c) const;
+    Color operator*(double x) const;
+    friend Color operator*(double x, const Color& c);
 };
 
 const Color Red(255, 0, 0);
 const Color Blue(0, 0, 255);
 const Color White(255, 255, 255);
+const Color Black(0, 0, 0);
 
 enum Format { GRAYSCALE = 1, RGB = 3, RGBA = 4 };
-
 
 class Bitmap
 {
 public:
-    Bitmap(const int width = 0, const int height = 0) : w(width), h(height) { data.resize(width * height); }
-    Bitmap(const std::string& filename) { this->LoadFile(filename); }
+    Bitmap(const int width = 0, const int height = 0);
+    Bitmap(const std::string& filename);
 
 
-    inline int width() const { return w; }
-    inline int height() const { return h; }
+    int width() const;
+    int height() const;
 
-    inline void Fill(const Color& color) { for (auto&& i : data) i = color; }
+    void Fill(const Color& color);
     void FlipVertical();
     void FlipHorizontal();
     bool LoadFile(const std::string& filename);
     bool SaveFile(const std::string& filename, Format format = RGB) const;
-    inline void SetPixel(int x, int y, const Color& color) { data[getIndex(x, y)] = color; }
-    inline void SetPixel(const Vec2i& xy, const Color& color) { data[getIndex(xy.x, xy.y)] = color; }
-    inline const Color& GetPixel(int x, int y) const { return data[getIndex(x, y)]; }
-    inline const Color& GetPixel(const Vec2i& xy) const { return data[getIndex(xy.x, xy.y)]; }
+    void SetPixel(int x, int y, const Color& color);
+    template <typename T>
+    void SetPixel(const Vector<T, 2>& v, const Color& color) { data[getIndex((int)v.x, (int)v.y)] = color; }
+    const Color& GetPixel(int x, int y) const;
 
-    inline const Color& Sample2D(int u, int v) const { return GetPixel(u * w, v * h); }
-    inline const Color& Sample2D(const Vec2i& uv) const { return GetPixel(uv.u * w, uv.v * h); }
-    inline const Color& Sample2D(float u, float v) const { return data[0]; }
-    inline const Color& Sample2D(const Vec2f& uv) const { return data[0]; }
-    inline const Color& Sample2D(const Vec2d& uv) const { return data[0]; }
+    const Color& Sample2D(double u, double v) const;
+    template <typename T>
+    const Color& Sample2D(const Vector<T, 2>& v) const { return data[getIndex((int)v.x, (int)v.y)]; }
 
 private:
     int w;
@@ -81,6 +76,6 @@ private:
         uint32_t	biClrImportant;
     };
 
-    inline int getIndex(int x, int y) const { return x * h + y; }
+    int getIndex(int x, int y) const;
 };
 #endif

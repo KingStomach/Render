@@ -1,9 +1,3 @@
-//=====================================================================
-//
-// Model.h - 该文件参考了 tinyrender 的 Model.h 
-//
-//=====================================================================
-
 #ifndef _MODEL_H_
 #define _MODEL_H_
 
@@ -18,13 +12,14 @@ public:
 
     int nverts() const;
     int nfaces() const;
-    Vec3d normal(const int iface, const int nthvert) const; // per triangle corner normal vertex
+    Vec3d normal(const int iface, const int nthvert) const;  // per triangle corner normal vertex
+    Vec3d normal(const int iface) const;
     Vec3d normal(const Vec2d& uv) const;                     // fetch the normal vector from the normal map texture
     Vec3d vert(const int i) const;
     Vec3d vert(const int iface, const int nthvert) const;
     Vec2d uv(const int iface, const int nthvert) const;
-    const Bitmap& diffuse()  const { return diffusemap; }
-    const Bitmap& specular() const { return specularmap; }
+    const Bitmap& diffuse()  const;
+    const Bitmap& specular() const;
 
 private:
     std::vector<Vec3d> verts{};     // array of vertices
