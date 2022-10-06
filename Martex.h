@@ -22,9 +22,8 @@ struct Matrix
 
 	Matrix<T, ROW, COL> operator+(const Matrix<T, ROW, COL>& matrix);
 	Matrix<T, ROW, COL> operator-(const Matrix<T, ROW, COL>& matrix);
-	Matrix<T, ROW, COL> operator*(const Matrix<T, ROW, COL>& matrix) const;
-	Vector<T, COL> operator*(const Vector<T, COL>& v) const;
-	Matrix<T, ROW, COL> operator/(const T& x) const;
+	Matrix<T, ROW, COL> operator*(const Matrix<T, ROW, COL>& matrix);
+	Vector<T, COL> operator*(const Vector<T, COL>& v);
 
 };
 
@@ -94,7 +93,7 @@ inline Matrix<T, ROW, COL> Matrix<T, ROW, COL>::operator-(const Matrix<T, ROW, C
 }
 
 template<typename T, size_t ROW, size_t COL>
-inline Matrix<T, ROW, COL> Matrix<T, ROW, COL>::operator*(const Matrix<T, ROW, COL>& matrix) const
+inline Matrix<T, ROW, COL> Matrix<T, ROW, COL>::operator*(const Matrix<T, ROW, COL>& matrix)
 {
 	Matrix<T, ROW, COL> M;
 	for (size_t i = 0; i < ROW; i++)
@@ -104,42 +103,12 @@ inline Matrix<T, ROW, COL> Matrix<T, ROW, COL>::operator*(const Matrix<T, ROW, C
 }
 
 template<typename T, size_t ROW, size_t COL>
-inline Vector<T, COL> Matrix<T, ROW, COL>::operator*(const Vector<T, COL>& v) const
+inline Vector<T, COL> Matrix<T, ROW, COL>::operator*(const Vector<T, COL>& v)
 {
 	Vector<T, COL> t;
 	for (size_t i = 0; i < COL; i++)
 		t[i] = this->getRow(i) * v;
 	return t;
-}
-
-template<typename T, size_t ROW, size_t COL>
-inline Matrix<T, ROW, COL> operator*(const Matrix<T, ROW, COL>& matrix, const T& x)
-{
-	Matrix<T, ROW, COL> M;
-	for (size_t i = 0; i < COL; i++)
-		for (size_t j = 0; j < COL; j++)
-			M[i][j] = matrix[i][j] * x;
-	return M;
-}
-
-template<typename T, size_t ROW, size_t COL>
-inline Matrix<T, ROW, COL> operator*(const T& x, const Matrix<T, ROW, COL>& matrix)
-{
-	Matrix<T, ROW, COL> M;
-	for (size_t i = 0; i < COL; i++)
-		for (size_t j = 0; j < COL; j++)
-			M[i][j] = matrix[i][j] * x;
-	return M;
-}
-
-template<typename T, size_t ROW, size_t COL>
-Matrix<T, ROW, COL> Matrix<T, ROW, COL>::operator/(const T& x) const
-{
-	Matrix<T, ROW, COL> M;
-	for (size_t i = 0; i < COL; i++)
-		for (size_t j = 0; j < COL; j++)
-			M[i][j] = data[i][j] / x;
-	return M;
 }
 
 template<typename T, size_t N>
@@ -196,7 +165,7 @@ Matrix<T, 4, 4> Ortho(const T& left, const T& right, const T& bottom, const T& t
 template<typename T>
 Matrix<T, 4, 4> Perspective(const T& fov, const T& aspect, const T& zNear, const T& zFar)
 {
-	T top = zNear * tan(M_PI * fov / 360.0), bottom = -top;
+	T top = 2.0 * zNear * tan(M_PI * fov / 2.0), bottom = -top;
 	T left = top * aspect, right = -left;
 	Matrix<T, 4, 4> M;
 	M[0][0] = -zNear;

@@ -289,26 +289,26 @@ inline double operator*(const Vector<T, N>& a, const Vector<T, N>& b)
 	return result;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N> operator*(const T& x, const Vector<T, N>& a)
+template <typename T1, size_t N>
+inline Vector<T1, N> operator*(double x, const Vector<T1, N>& a)
 {
-	Vector<T, N> c;
+	Vector<T1, N> c;
 	for (size_t i = 0; i < N; i++)
 		c[i] = a[i] * x;
 	return c;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N> operator*(const Vector<T, N>& a, const T& x)
+template <typename T1, typename T2, size_t N>
+inline Vector<T1, N> operator*(const Vector<T1, N>& a, const T2& x)
 {
-	Vector<T, N> c;
+	Vector<T1, N> c;
 	for (size_t i = 0; i < N; i++)
 		c[i] = a[i] * x;
 	return c;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N>& operator*=(const Vector<T, N>& a, const T& x)
+template <typename T1, typename T2, size_t N>
+inline Vector<T1, N>& operator*=(const Vector<T1, N>& a, const T2& x)
 {
 	for (size_t i = 0; i < N; i++)
 		a[i] *= x;
@@ -324,17 +324,17 @@ inline Vector<T, N> operator/(const Vector<T, N>& a, const Vector<T, N>& b)
 	return c;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N> operator/(const Vector<T, N>& a, const T& x)
+template <typename T1, typename T2, size_t N>
+inline Vector<T1, N> operator/(const Vector<T1, N>& a, const T2& x)
 {
-	Vector<T, N> c;
+	Vector<T1, N> c;
 	for (size_t i = 0; i < N; i++)
 		c[i] = a[i] / x;
 	return c;
 }
 
-template <typename T, size_t N>
-inline Vector<T, N>& operator/=(Vector<T, N>& a, const T& x)
+template <typename T1, typename T2, size_t N>
+inline Vector<T1, N>& operator/=(Vector<T1, N>& a, const T2& x)
 {
 	for (size_t i = 0; i < N; i++)
 		a[i] /= x;

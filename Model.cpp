@@ -35,7 +35,7 @@ Model::Model(const std::string filename)
             iss >> trash >> trash;
             Vec2d uv;
             for (int i = 0; i < 2; i++) iss >> uv[i];
-            tex_coord.emplace_back(Vec2d(uv.x, uv.y));
+            tex_coord.emplace_back(Vec2d(uv.x, 1 - uv.y));
         }
         else if (!line.compare(0, 2, "f ")) {
             int f, t, n;
@@ -85,7 +85,7 @@ Vec3d Model::normal(const int iface, const int nthvert) const
 Vec3d Model::normal(const int iface) const
 {
     Vec3d a = norms[facet_nrm[iface * 3]], b = norms[facet_nrm[iface * 3 + 1]], c = norms[facet_nrm[iface * 3 + 2]];
-    return (c - a)^(b - a).normalize();
+    return (b - a)^(c - a).normalize();
 }
 
 Vec3d Model::vert(const int i) const

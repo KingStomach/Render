@@ -11,7 +11,7 @@ struct Color
     union
     {
         Vector<std::uint8_t, 4> bgra;
-        struct { std::uint8_t b, g, r, a; };
+        struct { std::uint8_t r, g, b, a; };
     };
 
     Color();
@@ -49,11 +49,13 @@ public:
     bool LoadFile(const std::string& filename);
     bool SaveFile(const std::string& filename, Format format = RGB) const;
     void SetPixel(int x, int y, const Color& color);
-    void SetPixel(const Vector<int, 2>& v, const Color& color);
+    template <typename T>
+    void SetPixel(const Vector<T, 2>& v, const Color& color) { data[getIndex((int)v.x, (int)v.y)] = color; }
     const Color& GetPixel(int x, int y) const;
 
     const Color& Sample2D(double u, double v) const;
-    const Color& Sample2D(const Vec2d& uv) const;
+    template <typename T>
+    const Color& Sample2D(const Vector<T, 2>& v) const { return data[getIndex((int)v.x, (int)v.y)]; }
 
 private:
     int w;
@@ -76,56 +78,4 @@ private:
 
     int getIndex(int x, int y) const;
 };
-
-
-inline bool Color::operator==(const Color& c) const
-{
-    return this->bgra == c.bgra;
-}
-
-inline bool Color::operator!=(const Color& c) const
-{
-    return this->bgra != c.bgra;
-}
-
-inline Color Color::operator+(const Color& c) const
-{
-    return Color(c.bgra + this->bgra);
-}
-
-inline Color Color::operator*(double x) const
-{
-    return Color(x * this->r + 0.5, x * this->g + 0.5, x * this->b + 0.5, a);
-}
-
-inline Color operator*(double x, const Color& c)
-{
-    return Color(x * c.r + 0.5, x * c.g + 0.5, x * c.b + 0.5, c.a);
-}
-
-inline void Bitmap::SetPixel(int x, int y, const Color& color)
-{
-    data[getIndex(x, y)] = color;
-}
-
-inline void Bitmap::SetPixel(const Vector<int, 2>& v, const Color& color)
-{
-    data[getIndex(v.x, v.y)] = color;
-}
-
-inline const Color& Bitmap::GetPixel(int x, int y) const
-{
-    return data[getIndex(x, y)];
-}
-
-inline const Color& Bitmap::Sample2D(const Vec2d& uv) const
-{
-    return Sample2D(uv.u, uv.v);
-}
-
-inline int Bitmap::getIndex(int x, int y) const
-{
-    return x + y * w;
-}
-
 #endif
