@@ -7,15 +7,6 @@
 #include "Shader.h"
 #include "Model.h"
 
-struct Light
-{
-	Vec3d position;
-	Vec3d direction;
-
-	Light();
-	Light(const Vec3d& position, const Vec3d& direction);
-};
-
 enum class DrawType { Point, WireFrame, Triangle };
 
 class Scene
@@ -36,12 +27,10 @@ private:
 	std::vector<double> zbuffer;
 
 	Bitmap renderPoint(Shader& shader);
-	Bitmap renderWireFrame(Shader& shader);
 	Bitmap renderTriangle(Shader& shader);
 	void drawLine(Bitmap& map, const Vec3d &p1, const Vec3d& p2, const Color& color);
-	void drawTriangle(Bitmap& map, const std::array<Vec3d, 3>& TriangleWorld, const std::array<Vec3d, 3>& TriangleScreen,
-		const std::array<Color, 3>& color);
+	void drawTriangle(Bitmap& map, Shader& shader, const std::array<Vec3d, 3>& Triangle, const std::array<ShaderContext, 3>& context);
 
-	inline int getIndex(int x, int y) const { return x * h + y; }
+	inline int getIndex(int x, int y) const { return x + y * w; }
 };
 #endif

@@ -2,6 +2,7 @@
 #include <fstream>
 
 #include "Bitmap.h"
+#include "Geometry.h"
 
 Color::Color() : bgra{ 0,0,0,255 } {}
 
@@ -10,32 +11,6 @@ Color::Color(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) : b
 Color::Color(const Vector<std::uint8_t, 4>& v) :bgra(v) {}
 
 Color::Color(const Color& c) : bgra(c.bgra) {}
-
-
-bool Color::operator==(const Color& c) const
-{
-    return this->bgra == c.bgra;
-}
-
-bool Color::operator!=(const Color& c) const
-{
-    return this->bgra != c.bgra;
-}
-
-Color Color::operator+(const Color& c) const
-{
-    return Color(c.bgra + this->bgra);
-}
-
-Color Color::operator*(double x) const
-{
-    return Color(x * this->r, x * this->g, x * this->b, a);
-}
-
-Color operator*(double x, const Color& c)
-{
-    return Color(x * c.r, x * c.g, x * c.b, c.a);
-}
 
 Bitmap::Bitmap(const int width, const int height) : w(width), h(height)
 {
@@ -108,7 +83,7 @@ bool Bitmap::LoadFile(const std::string& filename)
     uint32_t pitch = (pixelsize * info.biWidth + 3) & (~3);
     for (int y = 0; y < (int)info.biHeight; y++) {
         for (int x = 0; x < (int)info.biWidth; x++) {
-            in.read(reinterpret_cast<char*>(&data[getIndex(x, y)]), sizeof(Color));
+            in.read(reinterpret_cast<char*>(&data[getIndex(x, y)]), sizeof(pixelsize));
             if (!in.is_open())
             {
                 std::cerr << "can't read pixel " << std::to_string(x) << " " << std::to_string(y) << "\n";
@@ -116,7 +91,7 @@ bool Bitmap::LoadFile(const std::string& filename)
                 return false;
             }
         }
-        in.seekg(pitch - info.biWidth * pixelsize, std::ios_base::beg);
+        //in.seekg(pitch - info.biWidth * pixelsize, std::ios_base::beg);
     }
     return true;
 }
@@ -182,23 +157,12 @@ bool Bitmap::SaveFile(const std::string& filename, Format format) const
     return true;
 }
 
-void Bitmap::SetPixel(int x, int y, const Color& color)
-{
-    data[getIndex(x, y)] = color;
-}
-
-
-const Color& Bitmap::GetPixel(int x, int y) const
-{
-    return data[getIndex(x, y)];
-}
-
 const Color& Bitmap::Sample2D(double u, double v) const
 {
-    return data[getIndex((int)u * w, (int)v * h)];
-}
-
-int Bitmap::getIndex(int x, int y) const
-{
-    return x * h + y;
+    double x0 = floor(u * w), x1 = x0 + 1.0;
+    double y0 = floor(v * h), y1 = y0 + 1.0;
+    Color c0 = GetPixel((int)x0, (int)y0), c1 = GetPixel((int)x1, (int)y0), c2 = GetPixel((int)x0, (int)y1),
+        c3 = GetPixel((int)x1, (int)y1);
+    return BilinearInterpol<double, Color>(std::pair<Vec2d, Color>(Vec2d(x0, y0), c0), std::pair<Vec2d, Color>(Vec2d(x1, y0), c0),
+        std::pair<Vec2d, Color>(Vec2d(x0, y1), c0), std::pair<Vec2d, Color>(Vec2d(x1, y1), c0), Vec2d(u * w, v * h));
 }

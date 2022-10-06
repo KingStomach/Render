@@ -1,9 +1,5 @@
 #include "Scene.h"
 
-Light::Light() {}
-
-Light::Light(const Vec3d& position, const Vec3d& direction) : position(position), direction(direction) {}
-
 Scene::Scene(int width, int height, const Model& model) : w(width), h(height), model(model),
     drawtype(DrawType::Triangle), zbuffer(width* height, -DBL_MAX) {}
 
@@ -29,7 +25,6 @@ Bitmap Scene::render(Shader& shader)
     case DrawType::Point:
         return renderPoint(shader);
     case DrawType::WireFrame:
-        return renderWireFrame(shader);
     case DrawType::Triangle:
         return renderTriangle(shader);
     default:
@@ -40,59 +35,70 @@ Bitmap Scene::render(Shader& shader)
 Bitmap Scene::renderPoint(Shader& shader)
 {   
     Bitmap map(this->w, this->h);
-    Vec3d bcScreen;
-    for (int i = 0; i < model.nfaces(); i++)
+    Vec4d vertex;
+    ShaderContext varyContext;
+    Mat4d viewPort = Scale(Vec3d(w / 2.0, h / 2.0, 1.0)) * Translate(Vec3d(1, 1, 1));
+    for (int i = 0; i < model.nverts(); i++)
     {
-        for (int j = 0; j < 3; j++)
-        {
-            bcScreen = shader.Vertex(model.vert(i, j), model.normal(i, j), model.uv(i, j));
-            map.SetPixel(convert<double, 3, 2>(bcScreen), White);
-        }
-    }
-    return map;
-}
-
-Bitmap Scene::renderWireFrame(Shader& shader)
-{
-    Bitmap map(this->w, this->h);
-    for (int i = 0; i < model.nfaces(); i++)
-    {
-        //std::array<Vec3d, 3> TriangleWorld;
-        std::array<Vec3d, 3> TriangleScreen;
-        Color c;
-        for (int j = 0; j < 3; j++)
-        {
-            //TriangleWorld[j] = model.vert(i, j);
-            TriangleScreen[j] = shader.Vertex(model.vert(i, j), model.normal(i), model.uv(i, j));
-            c = shader.Fragment();
-        }
-        if (c != Black)
-        {
-            drawLine(map, TriangleScreen[0], TriangleScreen[1], White);
-            drawLine(map, TriangleScreen[0], TriangleScreen[2], White);
-            drawLine(map, TriangleScreen[1], TriangleScreen[2], White);
-        }
+        ShaderContext attriContext;
+        attriContext.vec3.emplace_back(model.vert(i));
+        attriContext.vec3.emplace_back(Vec3d(0, 0, 0));
+        attriContext.vec2.emplace_back(Vec2d(0, 0));
+        vertex = shader.Vertex(attriContext, varyContext);
+        vertex /= vertex.w;
+        map.SetPixel(Vec2i(vertex.x, vertex.y), White);
     }
     return map;
 }
 
 Bitmap Scene::renderTriangle(Shader& shader)
 {
+
     Bitmap map(this->w, this->h);
-    for (int i = 0; i < model.nfaces(); i++)
+    for (size_t i = 0; i < model.nfaces(); i++)
     {
-        std::array<Vec3d, 3> TriangleWorld;
-        std::array<Vec3d, 3> TriangleScreen;
-        std::array<Color, 3> TriangleColor;
+        std::array<ShaderContext, 3> context;
+        std::array<Vec3d, 3> triangle;
+        Vec4d vertex;
         Mat4d viewPort = Scale(Vec3d(w / 2.0, h / 2.0, 1.0)) * Translate(Vec3d(1, 1, 1));
-        for (int j = 0; j < 3; j++)
+        bool isDraw = true;
+        for (size_t j = 0; j < 3; j++)
         {
-            TriangleWorld[j] = model.vert(i, j);
-            TriangleScreen[j] = shader.Vertex(model.vert(i, j), model.normal(i, j), model.uv(i, j));
-            TriangleScreen[j] = convert<double, 4, 3>(viewPort * convert<double, 3, 4>(TriangleScreen[j], 1.0));
-            TriangleColor[j] = shader.Fragment();
+            ShaderContext attriContext;
+            attriContext.vec3.emplace_back(model.vert(i, j));
+            attriContext.vec3.emplace_back(model.normal(i, j));
+            attriContext.vec2.emplace_back(model.uv(i, j));
+            vertex = shader.Vertex(attriContext, context[j]);
+            vertex /= vertex.w;
+            // Frustum Culling
+            if (vertex.x < -1.0 || vertex.x >= 1.0 || vertex.y < -1.0 || vertex.y >= 1.0)
+            {
+                isDraw = false;
+                break;
+            }
+            triangle[j] = convert<double, 4, 3>(viewPort * vertex);
         }
-        drawTriangle(map, TriangleWorld, TriangleScreen, TriangleColor);
+        // Face Culling
+        if (isDraw)
+        {
+            Vec3d normal = (triangle[2] - triangle[0]) ^ (triangle[1] - triangle[0]);
+            if (normal.z < 0)
+                isDraw = false;
+        }
+
+        if (!isDraw)
+            continue;
+
+        if (drawtype == DrawType::Triangle)
+        {
+            drawTriangle(map, shader, triangle, context);
+        }
+        else if (drawtype == DrawType::WireFrame)
+        {
+            drawLine(map, triangle[0], triangle[1], White);
+            drawLine(map, triangle[0], triangle[2], White);
+            drawLine(map, triangle[1], triangle[2], White);
+        }
     }
     return map;
 }
@@ -125,15 +131,11 @@ void Scene::drawLine(Bitmap& map, const Vec3d& p1, const Vec3d& p2, const Color&
     }
 }
 
-void Scene::drawTriangle(Bitmap& map, const std::array<Vec3d, 3>& TriangleWorld, const std::array<Vec3d, 3>& TriangleScreen, 
-    const std::array<Color, 3>& color)
+void Scene::drawTriangle(Bitmap& map, Shader& shader, const std::array<Vec3d, 3>& Triangle, const std::array<ShaderContext, 3>& context)
 {
-    if (color[0] == Black && color[1] == Black && color[2] == Black)
-        return;
-    
     int xmin = INT_MAX, ymin = INT_MAX;
     int xmax = INT_MIN, ymax = INT_MIN;
-    for (auto&& point : TriangleScreen)
+    for (auto&& point : Triangle)
     {
         xmin = std::min(xmin, (int)point.x);
         xmax = std::max(xmax, (int)point.x + 1);
@@ -141,24 +143,27 @@ void Scene::drawTriangle(Bitmap& map, const std::array<Vec3d, 3>& TriangleWorld,
         ymax = std::max(ymax, (int)point.y + 1);
     }
 
+    double depth = 0.0;
+    ShaderContext baryContext;
+    Color c;
     for (int i = xmin; i <= xmax; i++)
     {
         for (int j = ymin; j <= ymax; j++)
         {
-            if (isIntersect(TriangleScreen, Vec3d(i, j, 0)))
+            if (isIntersect(Triangle, Vec3d(i + 0.5, j + 0.5, 0)))
             {
-                Vec3d bary = BarycentricInterpol2D<Vec3d, double>(TriangleScreen, Vec3d(i, j, 0));
-                //Vec3d bary = barycentric(TriangleScreen[0], TriangleScreen[1], TriangleScreen[2], Vec3d(i, j, 0));
+                Vec3d bary = BarycentricInterpol2D<Vec3d, double>(Triangle, Vec3d(i + 0.5, j + 0.5, 0));
                 if (bary.x < 0.0 || bary.y < 0.0 || bary.z < 0.0)
                     continue;
                 //todo Í¸ÊÓ½ÃÕý
                 
-                double t = ((TriangleWorld[1] - TriangleWorld[0]) ^ (TriangleWorld[2] - TriangleWorld[0])).normalize() * Vec3d(0, 0, 1);
-                double depth = bary.x * TriangleWorld[0].z + bary.y * TriangleWorld[1].z + bary.z * TriangleWorld[2].z;
+                //depth = bary * Vec3d(Triangle[0].z, Triangle[1].z, Triangle[2].z);
+                depth = 1.0 / (bary.x / Triangle[0].z + bary.y / Triangle[1].z + bary.z / Triangle[2].z);
                 if (zbuffer[getIndex(i, j)] < depth)
                 {
                     zbuffer[getIndex(i, j)] = depth;
-                    Color c = bary.x * color[0] + bary.y * color[1] + bary.z * color[2];
+                    baryContext = ShaderContext::BaryInterpol(context, bary, Vec3d(Triangle[0].z, Triangle[1].z, Triangle[2].z), depth);
+                    c = shader.Fragment(baryContext);
                     map.SetPixel(i, j, c);
                 }
             }

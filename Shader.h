@@ -5,43 +5,50 @@
 #include "Martex.h"
 #include "Vector.h"
 
+#include <array>
+#include <vector>
+
+// to save uniform, varying and attribute variable
 struct ShaderContext
 {
-	Vec3d FragPos;
-	Vec3d normal;
-	Vec2d uv;
+	std::vector<Vec2d> vec2;
+	std::vector<Vec3d> vec3;
+	std::vector<Vec4d> vec4;
+	std::vector<Mat4d> mat4;
+	std::vector<Bitmap> sampler2D;
 
 	ShaderContext();
+	//static ShaderContext BaryInterpol(const std::array<ShaderContext, 3>& context, const Vec3d& bary);
+	static ShaderContext BaryInterpol(const std::array<ShaderContext, 3>& context, const Vec3d& bary, const Vec3d& Z, double depth);
 };
 
 class Shader
 {
 public:
-	Shader(const Mat4d& ModelMatrix, const Mat4d& ViewMatrix, const Mat4d& ProjectionMatrix, const Bitmap& diffusemap);
-	// attribute variable
-	virtual Vec3d Vertex(const Vec3d& vertex, const Vec3d& normal, const Vec2d& uv) = 0;
-	virtual Color Fragment() = 0;
+	Shader(const ShaderContext& context);
+	virtual Vec4d Vertex(const ShaderContext& attriContext, ShaderContext& varyContext) const = 0;
+	virtual Color Fragment(const ShaderContext& context) const = 0;
 
 protected:
-	Mat4d ModelMatrix;
-	Mat4d ViewMatrix;
-	Mat4d ProjectionMatrix;
-	Bitmap diffusemap;
-	// use member of class shader to save uniform variable
-	ShaderContext context; // to save varying variable
+	ShaderContext uniformContext;
 
 };
 
-class PhongShader :public Shader
+// uniform variable : mat4[0]: ModelMatrix, mat4[1]: ViewMatrix, mat4[2]: ProjectionMatrix
+//                    sampler2D[0]: diffusemap, sampler2D[1]: specularmap
+//                    vec3[0]: light position, vec3[1]: light intensity, vec3[2]: camera position
+// varying variable : vec3[0]: FragPos, vec3[1]: normal
+//                    vec2[0]: uv
+// attribute variable : vec3[0]: VertexPosition, vec3[1]: normal
+//                      vec2[0]: uv
+class PhongShader : public Shader
 {
 public:
-	PhongShader(const Mat4d& ModelMatrix, const Mat4d& ViewMatrix, const Mat4d& ProjectionMatrix, const Bitmap& diffusemap, const Vec3d& light);
+	PhongShader(const ShaderContext& context);
+	Vec4d Vertex(const ShaderContext& attriContext, ShaderContext& varyContext) const override;
+	Color Fragment(const ShaderContext& varyContext) const override;
 
-	Vec3d Vertex(const Vec3d& vertex, const Vec3d& normal, const Vec2d& uv) override;
-	Color Fragment() override;
-
-private:
-	Vec3d light;
 };
+
 
 #endif

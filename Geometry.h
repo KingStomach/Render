@@ -37,4 +37,27 @@ Vector<N, 3> BarycentricInterpol2D(const std::array<T, 3>& Triangle, const T& po
 		return Vector<N, 3>(-1, -1, -1);
 }
 
+//              p0 ------x---p1
+template <typename T, typename N>
+inline N LinearInterpol(const std::pair<T, N>& p0, const std::pair<T, N>& p1, const T& x)
+{
+	T t = (x - p0.first) / (p1.first - p0.first);
+	return t * p0.second + (1 - t) * p1.second;
+}
+//            p2------------p3
+//            |        |    |
+//            |        |    |
+//            |        p    |
+//            |        |    |
+//            |        |    |
+//            p0------------p1
+template <typename T, typename N>
+inline N BilinearInterpol(const std::pair<Vector<T, 2>, N>& p0, const std::pair<Vector<T, 2>, N>& p1,
+	const std::pair<Vector<T, 2>, N>& p2, const std::pair<Vector<T, 2>, N>& p3, const Vector<T, 2>& p)
+{
+	N n1 = LinearInterpol(std::pair<T, N>(p0.first.x, p0.second), std::pair<T, N>(p1.first.x, p1.second), p.x);
+	N n2 = LinearInterpol(std::pair<T, N>(p2.first.x, p2.second), std::pair<T, N>(p3.first.x, p3.second), p.x);
+	return LinearInterpol(std::pair<T, N>(p0.first.y, n1), std::pair<T, N>(p2.first.y, n2), p.y);
+}
+
 #endif
